@@ -1,4 +1,7 @@
 import {User} from '../model/userModel.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { verifyEmail } from '../emailVerify/verifyEmail.js';
 
 export const register = async(req,res)=>{
     try {
@@ -18,12 +21,19 @@ export const register = async(req,res)=>{
             })
         }
 
+        const hashedPassword = await bcrypt.hash(password,10);
+        
         const newUser = await User.create({
             firstName,
             lastName,
             email,
-            password
+            password:hashedPassword
         });
+        
+        const token = jwt.sign({id:newUser._id}, process.env.SECRET_KEY, {expiresIn:'10m'});
+        verifyEmail(token,email);
+        newUser.token = token;
+        await newUser.save();
 
         return res.status(201).json({
             success:true,
@@ -34,6 +44,86 @@ export const register = async(req,res)=>{
         return res.status(500).json({
             success:false,
             message:"Register controller "+ error.message
+        });
+    }
+}
+
+export const verify = async(req,res)=>{
+    try {
+        const authHeader = req.headers.authorization;
+        if(!authHeader || !authHeader.startsWith("Bearer ")){
+            return res.status(401).json({
+                success:false,
+                message:"Unauthorized access"
+            });
+        }
+
+        const token = authHeader.split(" ")[1];
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.SECRET_KEY);
+        } catch (error) {
+            if(error.name === "TokenExpiredError"){
+                return res.status(401).json({
+                    success:false,
+                    message:"Token has expired"
+                });
+            }
+            return res.status(401).json({
+                success:false,
+                message:"Invalid token"
+            });
+        }
+
+        const user = await User.findById(decoded.id);
+        if(!user){
+            return res.status(400).json({
+                success:false,
+                message:"User not found"
+            });
+        }
+
+        user.token = null;
+        user.isVerified = true;
+        await user.save();
+
+        return res.status(200).json({
+            success:true,
+            message:"Email verified successfully"
+        });
+         
+    } catch (error) {
+        res.status(500).json({
+            success:false,
+            message:"Email verification error "+ error.message
+        })
+    }
+}
+
+export const reverify = async(req,res)=>{
+    try {
+        const {email} = req.body;
+        const user = await User.findOne({email});
+        
+        if(!user){
+            return res.status(400).json({
+                success:false,
+                message:"User not found"
+            });
+        }
+
+        const token = jwt.sign({id:user._id},process.env.SECRET_KEY, {expiresIn:'10m'});
+        verifyEmail(token,email);
+        user.token = token;
+        await user.save();
+        return res.status(200).json({
+            success:true,
+            message:"Verification email sent again successfully"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success:false,
+            message:"Reverify controller "+ error.message
         });
     }
 }

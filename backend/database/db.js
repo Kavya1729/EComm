@@ -1,4 +1,4 @@
-import { blue, red,bold } from "colorette";
+import { blue, red, bold } from "colorette";
 import mongoose from "mongoose"
 
 const connectdb = async () => {
