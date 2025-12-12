@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema({
     firstName: {type:String, required:true},
     lastName: {type:String, required:true},
     profilePic: {type:String, default:""},
-    profilePicId: {type:String, default:""}, // will use km to delete from cloudinary
+    profilePicId: {type:String, default:""}, // will use kmm to delete from cloudinary
     email: {type:String, required:true, unique:true},
     password: {type:String, required:true},
     role: {type:String, default:"user", enum:["user","admin"]},
