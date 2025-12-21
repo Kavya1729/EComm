@@ -1,4 +1,5 @@
-import { User } from "../model/userModel";
+import jwt from "jsonwebtoken";
+import { User } from "../model/userModel.js";
 
 
 export const isAuthenticated = async (req,res,next)=>{
@@ -35,6 +36,7 @@ export const isAuthenticated = async (req,res,next)=>{
                 message:"User not found"
             });
         }
+        req.user = user;
         req.id = user._id;
         next(); 
 
@@ -43,6 +45,19 @@ export const isAuthenticated = async (req,res,next)=>{
         return res.status(500).json({
             success:false,
             message:"Authentication middleware error "+ error.message
+        });
+    }
+}
+
+export const isAdmin = async(req,res,next)=>{
+    try {
+        if(req.user && req.user.role === 'admin'){
+            next();
+        }
+    } catch (error) {
+        return res.status(500).json({
+            success:false,
+            message:"Admin middleware error "+ error.message
         });
     }
 }
