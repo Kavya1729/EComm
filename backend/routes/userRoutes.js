@@ -1,6 +1,6 @@
 import express from 'express';
-import { login, logout, register,reverify,verify } from '../controller/userController.js';
-import { isAuthenticated } from '../middleware/isAuthenticated.js';
+import { allUser, changePassword, forgotPassword, getUserById, login, logout, register,reverify,verify, verifyOTP } from '../controller/userController.js';
+import { isAdmin, isAuthenticated } from '../middleware/isAuthenticated.js';
 
 const router = express.Router();
 
@@ -9,5 +9,11 @@ router.post('/verify', verify);
 router.post('/reverify', reverify); 
 router.post('/login',login);
 router.post('/logout',isAuthenticated,logout); 
+
+router.post('/forgot-password', isAuthenticated, forgotPassword);
+router.post('/verify-otp/:email',verifyOTP);
+router.post('/change-password/:email',changePassword);
+router.get('/all-user',isAuthenticated,isAdmin,allUser)
+router.get('/get-user/:userId',isAdmin,getUserById)
 
 export default router;
